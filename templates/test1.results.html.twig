@@ -1,0 +1,67 @@
+{% extends "base.html.twig" %}
+
+{% block body %}
+<div class="container">
+        <ul>
+		{% for person in people %}
+			<li>{{ person.name }} {{ person.surname }} {{ person.idNumber }} {{ person.dob }}</li>
+			{% endfor %}
+		</ul>
+</div>
+{% endblock %}
+{% block javascripts %}
+<script>
+var form = document.getElementById('test1Form');
+
+// Append the form status
+var formStatus = document.createElement('div');
+formStatus.setAttribute('class', 'form-status alert');
+form.appendChild(formStatus);
+
+form.onsubmit = function (e) {
+	// Stop the regular form submission
+	e.preventDefault();
+
+	var data = {};
+	for (var i = 0, ii = form.length; i < ii; ++i) {
+		var input = form[i];
+		if (input.name) {
+			data[input.name] = input.value;
+		}
+	}
+
+	// Construct an HTTP request
+	var xhr = new XMLHttpRequest();
+	xhr.open(form.method, form.action, true);
+	xhr.setRequestHeader('Accept', 'application/json; charset=utf-8');
+	xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+
+	// Send the collected data as JSON
+	xhr.send(JSON.stringify(data));
+
+	// Callback function
+	xhr.onloadend = function (response) {
+		if (response.target.status === 0) {
+
+			// Failed XmlHttpRequest should be considered an undefined error.
+			formStatus.className += ' alert-danger';
+			formStatus.innerHTML = form.dataset.formError.message;
+
+		} else if (response.target.status === 400) {
+
+			// Bad Request
+			formStatus.className += ' alert-danger';
+            console.log(response.target.response);
+			formStatus.innerHTML = JSON.parse(response.target.response).message;
+
+		} else if (response.target.status === 200) {
+
+			// Success
+			formStatus.className += ' alert-success';
+			formStatus.innerHTML = form.dataset.formSuccess;
+
+		}
+	};
+};
+</script>
+{% endblock %}
