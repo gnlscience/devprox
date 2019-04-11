@@ -2,14 +2,66 @@
 namespace App\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
-use App\Entity\People;
+use App\Entity\People; 
+use function Functional\first;
 
 class PeopleService
 {
     private $em;
+    private $firstNames = ['Tajuana', 'Naoma','Marni','Tobi','Coretta','Madeline','Waneta','Onie',
+        'Dorian','Harold','Elyse','Minh','Yong','Machelle','Marcelo','Lelah','Freida','Amiee',
+        'Harland','Winifred'];
+    private $surNames = ['Goodwin','Hunt','Mcgrath','Gregory','Horton','Thompson','Pierce',
+        'Kerr','Zhang','Gonzales','Spears','Ashley','Mcbride','Luna','Simmons','Collier'
+        ,'Farmer','Hughes','Ellis','Copeland'];
+
     public function __construct(EntityManagerInterface $em)
     {
         $this->em = $em;
+    }
+
+    public function createList($total){
+        $list = [];
+        $minAge = 30;
+        while(count($list) < $total){
+            $dob = $this->randomDob($minAge);
+            foreach($this->firstNames as $firstName){
+                foreach($this->surNames as $surName){
+                    $list[] = $this->createListPerson($firstName, $surName, $dob);
+                }
+            }
+            $minAge++;
+        } 
+        return $list;
+    }
+
+    private function createListPerson($firstName, $surName, $dob){
+        $initial = substr($firstName, 0, 1) . substr($surName, 0, 1);
+        $age = floor((time() - strtotime($dob)) / 31556926);
+        return [
+            "id" => md5('"' . $firstName . '","' . $surName . '","' . $initial . '","' . $dob . '","' . $age),
+            "firstName" => $firstName,
+            "lastName" => $surName,
+            "lastName" => $surName,
+            "initials" => substr($firstName, 0, 1) . substr($surName, 0, 1),
+            "dob" => $dob,
+            "age" => floor((time() - strtotime($dob)) / 31556926)
+        ]; 
+    }
+
+    private function isListedPerson($list, $person){
+        return first($list, function($item) use($person){ $item == $person; });
+    }
+
+    private function randomDob($minAge) {
+        //$max = strtotime($maxAge . ' years ago');
+        
+        $min = strtotime($minAge . ' years ago');
+        //die($min. " ". $max) ;
+
+        //$rand_time = mt_rand($max, $min);
+        //return date('m-d-Y', $rand_time);
+        return date('m-d-Y', $min);
     }
 
     public function create(People $person){
@@ -56,9 +108,10 @@ class PeopleService
         if(! 
             ((substr($person->getIdNumber(), 0, 2) === substr($person->getDob(), 8, 2))
             && (substr($person->getIdNumber(), 2, 2) === substr($person->getDob(), 3, 2))
-            && (substr($person->getIdNumber(), 4, 2) === substr($person->getDob(), 0, 2)))){
-                throw new \InvalidArgumentException('Dob not Matching!');
-            }
+            && (substr($person->getIdNumber(), 4, 2) === substr($person->getDob(), 0, 2)))
+        ){
+            throw new \InvalidArgumentException('Dob not Matching!');
+        }
     }
 
     private function isAlphanumeric(string $text){
@@ -66,6 +119,4 @@ class PeopleService
             throw new \InvalidArgumentException('Check name or Surname!');
         }
     }
-
-
 }
