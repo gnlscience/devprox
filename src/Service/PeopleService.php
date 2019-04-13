@@ -22,7 +22,7 @@ class PeopleService
 
     public function createList($total){
         $list = [];
-        $minAge = 30;
+        $minAge = 20;
         while(count($list) < $total){
             $dob = $this->randomDob($minAge);
             foreach($this->firstNames as $firstName){
@@ -37,18 +37,19 @@ class PeopleService
 
     private function createListPerson($firstName, $surName, $dob){
         $initial = substr($firstName, 0, 1) . substr($surName, 0, 1);
-        $age = floor((time() - strtotime($dob)) / 31556926);
+            $age = floor((time() - strtotime($dob)) / 31556926);
         return [
             "id" => md5('"' . $firstName . '","' . $surName . '","' . $initial . '","' . $dob . '","' . $age),
             "firstName" => $firstName,
             "lastName" => $surName,
-            "lastName" => $surName,
             "initials" => substr($firstName, 0, 1) . substr($surName, 0, 1),
             "dob" => $dob,
-            "age" => floor((time() - strtotime($dob)) / 31556926)
+            "age" => $this->getAge($dob)        
         ]; 
     }
-
+    private function getAge($date) {
+        return intval(date('Y', time() - strtotime($date))) - 1970;
+    }
     private function isListedPerson($list, $person){
         return first($list, function($item) use($person){ $item == $person; });
     }
@@ -56,11 +57,12 @@ class PeopleService
     private function randomDob($minAge) {
         //$max = strtotime($maxAge . ' years ago');
         
-        $min = strtotime($minAge . ' years ago');
+        $min = strtotime($minAge . ' days ago');
         //die($min. " ". $max) ;
 
         //$rand_time = mt_rand($max, $min);
         //return date('m-d-Y', $rand_time);
+
         return date('m-d-Y', $min);
     }
 

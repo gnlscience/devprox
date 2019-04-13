@@ -24,7 +24,6 @@ class Test2Controller extends AbstractController
     {
         $this->peopleService = $peopleService;
         $this->em = $em;
-
     }
 
     /**
@@ -37,15 +36,15 @@ class Test2Controller extends AbstractController
         ini_set('memory_limit', '-1');
         $response = new StreamedResponse(function () {
             $fp = fopen('php://output', 'w');
-            $people = $this->peopleService->createList(10);
+            fputcsv($fp, ['id', 'firstname', 'lastname', 'initials', 'dob', 'age']);
+            $people = $this->peopleService->createList(1000000);
              foreach ($people as $fields) {
                 fputcsv($fp, $fields);
              }
-            //$this->peopleService->createList(30, $fp);
             fclose($fp);
         });
         $response->headers->set('Content-Type', 'text/csv');
-        $response->headers->set('Content-Disposition', 'attachment;filename=pressurecsv.csv');
+        $response->headers->set('Content-Disposition', 'attachment;filename=output.csv');
         return $response;
     }
 
@@ -54,6 +53,10 @@ class Test2Controller extends AbstractController
      */
     public function import(Request $request)
     {
+        ini_set("upload_max_filesize","300M");
+        ini_set('MAX_EXECUTION_TIME', -1);
+        set_time_limit(7200);
+        ini_set('memory_limit', '-1');
         $form = $this->createFormBuilder()
         ->add('submitFile', FileType::class, [
             'data_class' => null,
@@ -62,46 +65,44 @@ class Test2Controller extends AbstractController
         ])
         ->getForm();
 
-        // Check if we are posting stuff
         if ($request->getMethod('post') == 'POST') {
-            // Bind request to the form
             $form->handleRequest($request);
-            var_dump($form->get('submitFile'));
-            // If form is valid
             if ($form->isValid()) {
-                // Get file
                 $file = $form->get('submitFile');
-                // Your csv file here when you hit submit button
-                //$file->getData();
+
                 $filedatat = $file->getData();
-               // var_dump(get_class_methods($filedatat[0])); die();
-                var_dump(get_class_methods($file));
 
                 if (($file) !== FALSE) {
                     $handle = fopen($filedatat[0]->getRealPath(),'rb');
+                    $filepath = $filedatat[0]->getRealPath();
                     $i = 0;
-                    $batchSize = 500;
-                    while (($row = fgetcsv($handle)) !== FALSE) {
-                        var_dump($row);
-                        $import = new CsvImport();
-                        $import->setFirstname($row[1]);
-                        $import->setLastname($row[2]);
-                        $import->setInitial($row[3]);
-                        $import->setAge($row[5]);
-                        $import->setDob(\DateTime::createFromFormat('m-d-Y', $row[4]));
+                    $batchSize = 10500;
+                    $conn= $this->em->getConnection();
+                    $sql = "INSERT INTO csv_import (firstname, lastname, initial, age, dob) VALUES ";
 
-                        $this->em->persist($import);
-                        if (($i % $batchSize) === 0) {
-                            $this->em->flush();
-                            $this->em->clear(); // Detaches all objects from Doctrine!
+                    while (($row = fgetcsv($handle)) !== FALSE) {
+                        if($i > 0){
+                            var_dump($i);
+                         $dob = \DateTime::createFromFormat('m-d-Y', $row[4]);
+                         $sql .= " ('".$row[1]."', '".$row[2]."', '".$row[3]."', ".$row[5].", '".$dob->format('Y-m-d')."' ) "; 
+
+                         if (($i % $batchSize) === 0) {
+                            $stmt = $this->em->getConnection()->prepare($sql);
+                            $stmt->execute();
+                            $sql = "INSERT INTO csv_import (firstname, lastname, initial, age, dob) VALUES ";
+                         }else{
+                             if($i != 1000000){
+                                $sql .= ",";
+                            }
+                         }
+                         
                         }
                         $i++;
                     }
-                    $this->em->flush();
-                    $this->em->clear(); // Detaches all objects from Doctrine!
+                    $stmt = $this->em->getConnection()->prepare($sql);
+                    $stmt->execute();
                 }
             }
-
         }
 
         return $this->render('test2.html.twig', ['form' => $form->createView()] );
