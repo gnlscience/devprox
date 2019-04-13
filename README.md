@@ -8,7 +8,9 @@
 6. cd sf4
 7. composer install
 8. php bin/console doctrine:migrations:migrate
-
+9. exit docker container
+10. mkdir public/uploads
+10. chmod -R 755 public/uploads
 
 ## Test 1
 ### Form
