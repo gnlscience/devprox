@@ -82,7 +82,6 @@ class Test2Controller extends AbstractController
 
                     while (($row = fgetcsv($handle)) !== FALSE) {
                         if($i > 0){
-                            var_dump($i);
                          $dob = \DateTime::createFromFormat('m-d-Y', $row[4]);
                          $sql .= " ('".$row[1]."', '".$row[2]."', '".$row[3]."', ".$row[5].", '".$dob->format('Y-m-d')."' ) "; 
 
