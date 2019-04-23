@@ -61,14 +61,7 @@ class PeopleService
     }
 
     private function randomDob($minAge) {
-        //$max = strtotime($maxAge . ' years ago');
-        
         $min = strtotime($minAge . ' days ago');
-        //die($min. " ". $max) ;
-
-        //$rand_time = mt_rand($max, $min);
-        //return date('m-d-Y', $rand_time);
-
         return date('m-d-Y', $min);
     }
 
