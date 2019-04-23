@@ -22,7 +22,7 @@ class PeopleService
 
     public function createList($total){
         $list = [];
-        $minAge = 20;
+        $minAge = 585;
         while(count($list) < $total){
             $dob = $this->randomDob($minAge);
             foreach($this->firstNames as $firstName){
@@ -48,7 +48,13 @@ class PeopleService
         ]; 
     }
     private function getAge($date) {
-        return intval(date('Y', time() - strtotime($date))) - 1970;
+	$dateArray = explode("-", $date);
+	$year = $dateArray[2];	
+	$month = $dateArray[0];
+	$day = $dateArray[1];
+	$date = "$year-$month-$day";
+    	$difference = time() - strtotime($date);
+    	return floor($difference / 31556926);
     }
     private function isListedPerson($list, $person){
         return first($list, function($item) use($person){ $item == $person; });
